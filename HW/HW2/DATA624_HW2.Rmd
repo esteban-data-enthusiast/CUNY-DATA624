@@ -1,0 +1,241 @@
+---
+title: "DATA624 - Homework 2"
+author: "Esteban Aramayo"
+date: "2022-06-10"
+# output: openintro::lab_report
+output: word_document
+---
+
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE,
+                      message=FALSE,
+                      collapse = FALSE,
+                      comment = "#>" )
+```
+
+
+
+# Week 2: Data Pre-processing & Exponential Smoothing [ Jun 6 - Jun 12]
+ 
+<br>
+
+## Exercise 7.8.1 (aka 7.1)
+
+Consider the pigs series — the number of pigs slaughtered in Victoria each month.
+
+a. Use the $ses$() function in R to find the optimal values of $\alpha$ and $l_0$, and generate forecasts for the next four months.
+
+### Solution
+
+<br>
+
+Below is the forecast for the next four months using simple exponential smoothing (ses) forecasts applied to pigs time series.
+
+```{r}
+library(fpp2)
+library(forecast)
+
+fc <- ses(y = pigs, h = 4)
+
+fc
+```
+
+Extract the optimal values of $\alpha$ and $l_0$ from the model component of the previously calculated forecast.
+
+```{r}
+
+optimal_alpha <- fc$model$par[1]
+optimal_l0    <- fc$model$par[2]
+
+print(optimal_alpha)
+print(optimal_l0)
+```
+
+The optimal values are: $\alpha$ = **`r paste0(round(optimal_alpha,7))`** and $l_0$ = **`r paste0(round(optimal_l0, 2))`**.
+
+<br>
+
+b. Compute a 95% prediction interval for the first forecast using $y ± 1.96s$ where $s$ is the standard deviation of the residuals. Compare your interval with the interval produced by R.
+
+### Solution
+
+<br>
+
+Below we can see that our first forecast corresponds to September 1995.
+
+```{r}
+print(fc)
+```
+
+Calculate the standard deviation of the residuals
+
+```{r}
+s <- sd( fc$residuals )
+
+print(s)
+```
+
+Calculate the Lower and Upper Confidence values for a 95% prediction interval using the residuals of the forecast and using the results from the model.
+
+```{r}
+# residuals results
+Lo95 <- fc$mean[1] - 1.96 * s
+Hi95 <- fc$mean[1] + 1.96 * s
+
+# model results
+R.Lo95 <- fc$lower[1,2] 
+R.Hi95 <- fc$upper[1,2]
+```
+
+When we compare our calculated values vs the values produced by R we see that the values obtained by both methods are close but not the same. The lower value is higher for the residuals method, while the upper value is smaller for the residuals method.
+
+
+
+Calculation Method | Lower 95   | Upper 95
+-------------------|------------|----------
+Residuals based ($y ± 1.96s$)    | `r paste0(round(Lo95,2))`   | `r paste0(round(Hi95,2))`
+R model based      | `r paste0(round(R.Lo95,2))` | `r paste0(round(R.Hi95,2))`
+
+
+
+<br>
+<br>
+
+
+## Exercise 7.8.2 (aka 7.2) 
+
+Write your own function to implement simple exponential smoothing. The function should take arguments $y$ (the time series), alpha (the smoothing parameter $\alpha$ ) and level (the initial level $l_0$). It should return the forecast of the next observation in the series. Does it give the same forecast as $ses$()?
+
+### Solution
+
+<br>
+
+Let's create our own version of the $ses$() function using the formula for weighted average form
+
+$\hat{y}_{t+1|t} = \alpha y_t + (1 - \alpha) \hat{y}_{t|t-1}$
+
+
+```{r}
+
+myses <- function(y, alpha, level) {
+  
+  # set initial estimated y with level
+  y_hat <- level
+  
+  # traverse elements of series
+  for(i in 1:length(y)) {
+    
+    # calculate the next estimated y
+    y_hat <- alpha * y[i] + (1 - alpha) * y_hat
+    
+  }
+  
+  return(y_hat)
+  
+}
+
+```
+
+Now let's see if the forecast of the next observation in the series returned by our $myses$() function matches the value returned by the $ses$() function.
+
+```{r}
+
+
+fc_myses <- myses(y = pigs, alpha = optimal_alpha, level = optimal_l0)
+
+fc_ses <- ses(y = pigs, h = 4)
+
+print(fc_myses)
+
+print(fc_ses$mean[1])
+
+```
+
+When comparing the forecast results for the next observation we can see that the two calculation methods yield very close results.
+
+Calculation Method | Forecast value
+-------------------|-----------------------
+myses()   | `r paste0(round(fc_myses,2))`
+ses()      | `r paste0(round(fc_ses$mean[1],2))`
+
+
+
+<br>
+<br>
+
+
+## Exercise 7.8.3 (aka 7.3) 
+
+Modify your function from the previous exercise to return the sum of squared errors rather than the forecast of the next observation. Then use the $optim$() function to find the optimal values of $\alpha$ and $l_0$. Do you get the same values as the $ses$() function?
+
+### Solution
+
+<br>
+
+Based on the $myses$() function, create a function to return the Sum of Squared Errors (SSE).
+
+```{r}
+
+mySSE <- function( pars = c(alpha, level), y ) {
+  
+  # unpack pars array to get alpha and level values
+  alpha <- pars[1]
+  level <- pars[2]
+  
+  # set initial estimated y with level
+  y_hat <- level
+  
+  err   <- 0
+  
+  SSE   <- 0
+
+  # traverse elements of series
+  for(i in 1:length(y)) {
+    
+    # calculate error by subtracting estimated y from actual y
+    err <- y[i] - y_hat
+    
+    # sum up and accumulate squared errors
+    SSE <- SSE + err ^ 2
+    
+    # calculate the next estimated y
+    y_hat <- alpha * y[i] + (1 - alpha) * y_hat
+
+  }
+  
+  return(SSE)
+  
+}
+  
+```
+
+
+Let's use our $mySSE$() function to calculate the optimum values and compare them to the values from R's $ses$() function.
+
+```{r}
+
+result_mySSE <- optim( par = c(0.5, pigs[1]), y = pigs, fn = mySSE )
+
+
+mySSE_optimal_alpha <- result_mySSE$par[1]
+mySSE_optimal_l0    <- result_mySSE$par[2]
+
+ses_optimal_alpha   <- fc_ses$model$par[1]
+ses_optimal_l0      <- fc_ses$model$par[2]
+
+```
+
+When comparing the results of both methods, we see that the values are very close. The Optimal $\alpha$ for the $mySSE$() function is slightly bigger than that of the $ses$() function. While the Optimal $l_0$ for the $mySSE$() function is slightly smaller than that of the $ses$() function.
+
+
+Calculation Method | Optimal $\alpha$ | Optimal $l_0$
+-------------------|------------------|---------------
+$mySSE$() function | `r paste0(round(mySSE_optimal_alpha,7))`   | `r paste0(round(mySSE_optimal_l0,2))`
+R $ses$() function | `r paste0(round(ses_optimal_alpha,7))` | `r paste0(round(ses_optimal_l0,2))`
+
+
+
+
+
+
+

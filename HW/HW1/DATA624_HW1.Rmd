@@ -1,0 +1,164 @@
+---
+title: "DATA624 - Homework 1"
+author: "Esteban Aramayo"
+date: "2022-06-05"
+# output: openintro::lab_report
+output: word_document
+---
+
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE,
+                      message=FALSE,
+                      collapse = FALSE,
+                      comment = "#>" )
+```
+
+
+
+# Week 1, Getting Started and Time Series Graphics [May 31 - June 05]
+
+
+
+<br>
+
+## Exercise 2.10.1 
+
+Use the help function to explore what the series gold, woolyrnq and gas represent.
+
+a. Use autoplot() to plot each of these in separate plots.
+
+
+### Solution
+
+<br>
+
+```{r}
+library(fpp2)
+```
+
+```{r}
+autoplot(gold) +
+  ggtitle("Daily morning gold prices in US dollars") +
+  ylab("Gold Price") +
+  xlab("Day")
+```
+
+```{r}
+autoplot(woolyrnq) +
+  ggtitle("Quarterly production of woollen yarn in Australia: tonnes") +
+  ylab("Yarn Production") +
+  xlab("Year-Qrt")
+```
+
+```{r}
+autoplot(gas) +
+  ggtitle("Australian monthly gas production") +
+  ylab("Gas Production") +
+  xlab("Year-Month")
+```
+
+<br>
+
+b. What is the frequency of each series? Hint: apply the frequency() function.
+
+### Solution
+
+<br>
+
+The frequency of the $gold$ series is annual because its frequency value is `r frequency(gold)`.
+
+```{r}
+frequency(gold)
+```
+
+The frequency of the $woolyrnq$ series is quarterly because its frequency value is `r frequency(woolyrnq)`.
+
+```{r}
+frequency(woolyrnq)
+```
+
+The frequency of the $gas$ series is monthly because its frequency value is `r frequency(gas)`.
+
+```{r}
+frequency(gas)
+```
+
+
+
+<br>
+
+c. Use which.max() to spot the outlier in the gold series. Which observation was it?
+
+### Solution
+
+<br>
+
+The outlier observation in the $gold$ series is `r gold[which.max(gold)]`, which is located at the position `r which.max(gold)`.
+
+```{r}
+gold[which.max(gold)]
+```
+
+
+<br>
+
+
+
+
+## Exercise 2.10.3 
+
+Download some monthly Australian retail data from the book website. These represent retail sales in various categories for different Australian states, and are stored in a MS-Excel file.
+
+a. You can read the data into R with the following script:
+
+retaildata <- readxl::read_excel("retail.xlsx", skip=1)
+
+The second argument (skip=1) is required because the Excel sheet has two header rows.
+
+### Solution
+
+<br>
+
+```{r}
+
+# library(rio)
+# retail_url <- "https://otexts.com/fpp2/extrafiles/retail.xlsx"
+# retaildata <- rio::import(file = retail_url, which = 1)
+# head(retaildata)
+
+library(readxl)
+retaildata <- readxl::read_xlsx("retail.xlsx", skip = 1)
+head(retaildata)
+
+```
+
+
+<br>
+
+b. Select one of the time series as follows (but replace the column name with your own chosen column):
+
+myts <- ts(retaildata[,"A3349873A"], frequency=12, start=c(1982,4))
+
+### Solution
+
+<br>
+
+```{r}
+myts <- ts(retaildata[,"A3349336V"], frequency=12, start=c(1982,4))
+
+myts
+```
+
+
+<br>
+
+c. Explore your chosen retail time series using the following functions:
+
+autoplot(), ggseasonplot(), ggsubseriesplot(), gglagplot(), ggAcf()
+
+Can you spot any seasonality, cyclicity and trend? What do you learn about the series?
+
+
+
+### Solution
+
