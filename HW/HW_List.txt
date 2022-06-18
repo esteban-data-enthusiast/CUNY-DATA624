@@ -1,0 +1,95 @@
+WEEKLY MATERIALS
+----------------
+
+Week 1: Time Series and Decomposition [ 31-May 5-Jun]
+ 
+- See Getting Started
+- Read KJ#1, KJ#2
+- Read HA #1, HA#2
+- HW - HA (2.1, 2.3)
+- Read HA#6
+- HW - HA(6.2)
+- Introduce Yourself in Discussion
+- Prepare Your Discussion
+
+-----------------------------------------------------------
+
+Week 2: Data Pre-processing & Exponential Smoothing [ 6-Jun 12-Jun]
+ 
+Data Pre-processing
+
+- Read KJ #3
+- HW 3.1, 3.2
+- Prepare Your Discussion
+
+Exponential Smoothing
+
+- Read HA #7
+- HW HW 7.1, 7.2 and 7.3 (updated)
+- Prepare Your Discussion
+
+-----------------------------------------------------------
+
+Week 3: ARIMA Models [13-Jun 19-Jun]
+
+- Reading and HW
+- Read HA #8
+- HW  8.1, 8.2,8.6, 8.8
+- Discussion
+
+-----------------------------------------------------------
+
+Week 4: Linear Regression and Its Cousins [20-Jun 26-Jun]
+
+Week 4A Complete HW 1 and Project 1
+
+- Complete Project and HW
+- HW Batch #1 Due Saturday by midnight ET
+- Project #1 Due Saturday by midnight ET
+
+Week 4B: Linear Regression and Its Cousins
+
+- Read KJ #6
+- HW 6.3, HW
+
+
+-----------------------------------------------------------
+
+Week 5: Nonlinear Regression Models, Regression Trees and Rules-Based Models [27-Jun 3-Jul]
+
+Week 5A: Nonlinear Regression Models
+
+- Read KJ #7
+- HW 7.2 and 7.5
+- Discussion
+
+Week 5B: Regression Trees and Rules-Based Models
+
+- Read KJ #8 
+- HW# 8.1, 8.2, 8.3, 8.7
+
+-----------------------------------------------------------
+
+Week 6: Recommender Systems and Case Study [5-Jul 10-Jul]
+
+Week 6: Case Study - Strength of Concrete
+
+- Read: KJ # 10
+- Finish Chapter 8 problems
+
+Week 6B: Recommender Systems
+
+- Discussions
+- Reading Assigned via Announcement
+- HW Assigned via Announcement
+
+
+-----------------------------------------------------------
+
+Week 7: Complete 2nd Half Homework [11-Jul 17-Jul]
+
+- Discussions Close on Saturday end of Week 6, midnight ET
+- Project #2 Due on Saturday end of Week 7 , midnight ET
+- 2nd Half Homework Due on Saturday end of Week 7 , midnight ET
+
+-----------------------------------------------------------

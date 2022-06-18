@@ -19,13 +19,313 @@ knitr::opts_chunk$set(echo=TRUE, warning=FALSE,
  
 <br>
 
-## Exercise 7.8.1 (aka 7.1)
+## Data Pre-processing (Applied Predictive Modeling KJ)
+
+
+### Exercise 3.1 
+
+The UC Irvine Machine Learning Repository6 contains a data set related
+to glass identification. The data consist of 214 glass samples labeled as one
+of seven class categories. There are nine predictors, including the refractive
+index and percentages of eight elements: Na, Mg, Al, Si, K, Ca, Ba, and Fe.
+
+The data can be accessed via:
+
+```{r}
+library(mlbench)
+data(Glass)
+```
+
+```{r}
+str(Glass)
+```
+
+#### Exercise 3.1.a
+
+Using visualizations, explore the predictor variables to understand their distributions as well as the relationships between predictors.
+
+#### Solution
+
+<br>
+
+To understand the distribution of each predictor, we generate 9 histograms for the numeric predictors and one bar plot for the non-numeric factor. The table below shows the description of the distributions observed from their corresponding histograms.
+
+
+Predictor | Distribution Description
+----------|----------------------------------------------
+Al        | slightly right skewed
+Ba        | right skewed and mostly centered around 0 
+Ca        | right skewed 
+Fe        | right skewed and mostly centered around 0.0 
+K         | right skewed 
+Mg        | left skewed and bi-modal 
+Na        | nearly normal with a slight right tail 
+RI        | slightly right skewed 
+Si        | nearly normal with a slight left tail
+Type      | right skewed and mostly centered around 1,2, and 7
+
+<br>
+
+<br>
+
+
+```{r fig.width=6, fig.height=5}
+
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(ggplot2)
+library(corrplot)
+library(e1071)
+
+Glass %>%
+  purrr::keep(is.numeric) %>%
+  tidyr::gather() %>%
+  ggplot2::ggplot(aes(value)) +
+  geom_histogram(bins = 8) + 
+  facet_wrap(~key, scales = 'free') +
+  ggtitle("Histograms of All Numeric Predictors") +
+  theme_bw(base_size=8)
+
+```
+
+Bar plot for "Type" non-numeric factor predictor.
+
+```{r fig.width=2.5, fig.height=2}
+Glass %>%
+  ggplot2::ggplot() +
+  geom_bar(aes(x = Type)) +
+  ggtitle("Distribution of Types of Glass") +
+  theme_bw(base_size=8)
+```
+
+To determine the relation between the numeric predictors we generate a correlation matrix plot. Which shows us the following: 
+
+
+- There is positive correlation among the predictors below. The strongest positive correlation is between $Ca$ and $RI$.
+
+<br>
+
+Predictor | Predictor | Correlation Value
+----------|-----------|-------------------
+$Ca$      | $RI$      | 0.81
+$Al$      | $Ba$      | 0.48
+$Al$      | $K$       | 0.33
+$Ba$      | $Na$      | 0.33
+
+<br>
+
+- There is negative correlation among the predictors below. The strongest negative correlation is between $RI$ and $Si$.
+
+<br>
+
+Predictor | Predictor | Correlation Value
+----------|-----------|-------------------
+$RI$      | $Si$      | -0.54
+$Ba$      | $Mg$      | -0.49
+$Al$      | $Mg$      | -0.48
+$Ca$      | $Mg$      | -0.44
+$Al$      | $RI$      | -0.41
+
+
+
+
+<br>
+
+```{r fig.width=6.5, fig.height=3.8}
+Glass %>%
+  purrr::keep(is.numeric) %>%
+  cor() %>%
+  corrplot(method = 'number', order = 'alphabet', type = 'upper')
+  
+```
+
+
+<br>
+
+#### Exercise 3.1.b
+
+Do there appear to be any outliers in the data? Are any predictors skewed?
+
+To determine the presence of outliers we generate boxplots for each of the numeric predictors. The boxplots reveal that with exception of $Mg$ all other predictors have potential outliers.
+
+<br>
+
+```{r fig.width=6.5, fig.height=4}
+Glass %>%
+  purrr::keep(is.numeric) %>%
+  tidyr::gather() %>%
+  ggplot2::ggplot(aes(value)) + 
+  geom_boxplot(outlier.color = "black",
+               outlier.shape = 21,
+               outlier.fill = "red",
+               outlier.alpha = 0.2) +
+  facet_wrap(~key, scales = 'free') +
+  ggtitle("Boxplots of Numerical Predictors") +
+  theme_bw(base_size=8)
+```
+
+<br>
+
+Based on the previous histograms from Exercise 3.1.a, the boxplots above, and the skewness values below, we can confirm that all predictors have some degree of skewness. The predictors $Mg$ and $Si$ are left skewed, while the rest of the predictors are right skewed. Overall, predictor $K$ shows the highest degree of skewness (right skewness).
+
+<br>
+
+```{r}
+Glass %>%
+  purrr::keep(is.numeric) %>%
+  apply(., 2, e1071::skewness) %>%
+  round(4)
+```
+
+
+<br>
+
+#### Exercise 3.1.c
+
+Are there any relevant transformations of one or more predictors that might improve the classification model?
+
+Depending on the type of classification model that one decides to use, there might be two problems in the data that need to be dealt with, skewness and outliers.
+
+
+**Handling skewness**
+
+From Exercises 3.1.a and 3.1.c we know that all predictors have some degree of skewness. So, to it might be a good idea to try to reduce the skew by applying transformations to the data such as log, square root, or inverse.
+
+For those skewed predictors that contain values greater than zero, we could apply the Box and Cox procedure to each predictor to determine the appropriate transformation parameter $\lambda$. Which in turn, would help us apply the right transformation to the data to reduce the skew.
+
+**Handling outliers**
+
+Exercise 3.1.b revealed that with exception of $Mg$ all other predictors have potential outliers.
+
+To handle the outliers in our predictors, we would first need to analyze all the suspected outliers to determine if they are true outliers or not. If the values are proved to be errors, then probably it would be better to remove them. Ot it might be possible that they might be a clustered group of observations that make sense or some other reason that justifies their existence. Second, if after the analysis we conclude that there are legitimate outliers, then one can apply the "spatial sign" transformation to the predictors as a group. This is to try to reduce an exceptional influence of the outliers on the model.
+
+
+<br>
+
+### Exercise 3.2 
+
+The soybean data can also be found at the UC Irvine Machine Learning Repository. Data were collected to predict disease in 683 soybeans. The 35 predictors are mostly categorical and include information on the environmental conditions (e.g., temperature, precipitation) and plant conditions (e.g., left spots, mold growth). The outcome labels consist of 19 distinct classes.
+
+The data can be loaded via:
+
+```{r}
+library(mlbench)
+data(Soybean)
+
+## See ?Soybean for details
+```
+
+
+#### Exercise 3.2.a
+
+Investigate the frequency distributions for the categorical predictors. Are any of the distributions degenerate in the ways discussed earlier in this chapter?
+
+From the chapter, predictors with degenerate distributions are the ones that meet one of the following criteria:
+
+* If a predictor variable has a single unique value; we refer to this type of data as a zero variance predictor.
+* Similarly, some predictors might have only a handful of unique values that occur with very low frequencies. These “near-zero variance predictors” may have a single value for the vast majority of the samples.
+
+Below is a list of predictors with either zero variance or near-zero variance detected in the Soybean data set. In it one can see that predictors $mycelium$, $sclerotia$, and $leaf.mild$ appear to have degenerate distributions.
+
+<br>
+
+```{r}
+library(caret)
+
+pred <- Soybean[, 2:36]
+
+nzvars <- caret::nearZeroVar(x = pred, names = TRUE, saveMetrics = TRUE)
+
+degen <- nzvars %>%
+  filter(zeroVar == TRUE | nzv == TRUE) %>%
+  arrange(percentUnique)
+
+print(degen)
+```
+
+<br>
+
+Below are the distributions of the predictors $mycelium$, $sclerotia$, and $leaf.mild$, which appear to have degenerate distributions.
+
+```{r fig.width=6.5, fig.height=2}
+par(mfrow = c(1,3))
+plot(Soybean$mycelium,  main='mycelium')
+plot(Soybean$sclerotia, main='sclerotia')
+plot(Soybean$leaf.mild, main='leaf.mild' )
+```
+
+
+
+
+
+<br>
+
+#### Exercise 3.2.b
+
+Roughly 18% of the data are missing. Are there particular predictors that are more likely to be missing? Is the pattern of missing data related to the classes?
+
+The plot below shows the percentage of missing values for each predictor. Every predictor is missing values. Some more than others. 
+
+```{r}
+library(naniar)
+
+Soybean %>%
+  gg_miss_var(show_pct = TRUE)
+
+```
+
+<br>
+
+Next, the plot below shows the list of missing values per predictor but grouped by class. Such plot shows that only the 5 classes below have missing values.
+
+* phytophthora-rot 
+* diaporthe-pod-&-stem-blight    
+* cyst-nematode                  
+* 2-4-d-injury                   
+* herbicide-injury
+
+<br>
+
+```{r}
+gg_miss_var(Soybean, facet = Class)
+```
+
+<br>
+
+Below is a plot of missing values for the predictors of the Soybean dataset, but without including the observations for the 5 classes mentioned above. Such plot shows that after excluding the 5 classes, none of the predictors are missing values. This would confirm that the pattern of missing values is related to the 5 classes.
+
+<br>
+
+```{r}
+Soybean %>%
+  filter(!Class %in% c("phytophthora-rot", "diaporthe-pod-&-stem-blight", "cyst-nematode",
+                       "2-4-d-injury", "herbicide-injury")) %>%
+  gg_miss_var(show_pct = TRUE)
+```
+
+<br>
+
+#### Exercise 3.2.c
+
+Develop a strategy for handling missing data, either by eliminating predictors or imputation.
+
+
+<br>
+
+## Data Pre-processing (Applied Predictive Modeling KJ)
+
+## Chapter 7 Exponential smoothing (Forecasting: Principle and Practice HA)
+
+### Exercise 7.8.1 (aka 7.1)
 
 Consider the pigs series — the number of pigs slaughtered in Victoria each month.
 
-a. Use the $ses$() function in R to find the optimal values of $\alpha$ and $l_0$, and generate forecasts for the next four months.
+#### Exercise 7.8.1.a
 
-### Solution
+Use the $ses$() function in R to find the optimal values of $\alpha$ and $l_0$, and generate forecasts for the next four months.
+
+#### Solution
 
 <br>
 
@@ -55,9 +355,11 @@ The optimal values are: $\alpha$ = **`r paste0(round(optimal_alpha,7))`** and $l
 
 <br>
 
-b. Compute a 95% prediction interval for the first forecast using $y ± 1.96s$ where $s$ is the standard deviation of the residuals. Compare your interval with the interval produced by R.
+#### Exercise 7.8.1.b
 
-### Solution
+Compute a 95% prediction interval for the first forecast using $y ± 1.96s$ where $s$ is the standard deviation of the residuals. Compare your interval with the interval produced by R.
+
+#### Solution
 
 <br>
 
@@ -102,7 +404,7 @@ R model based      | `r paste0(round(R.Lo95,2))` | `r paste0(round(R.Hi95,2))`
 <br>
 
 
-## Exercise 7.8.2 (aka 7.2) 
+### Exercise 7.8.2 (aka 7.2) 
 
 Write your own function to implement simple exponential smoothing. The function should take arguments $y$ (the time series), alpha (the smoothing parameter $\alpha$ ) and level (the initial level $l_0$). It should return the forecast of the next observation in the series. Does it give the same forecast as $ses$()?
 
@@ -164,7 +466,7 @@ ses()      | `r paste0(round(fc_ses$mean[1],2))`
 <br>
 
 
-## Exercise 7.8.3 (aka 7.3) 
+### Exercise 7.8.3 (aka 7.3) 
 
 Modify your function from the previous exercise to return the sum of squared errors rather than the forecast of the next observation. Then use the $optim$() function to find the optimal values of $\alpha$ and $l_0$. Do you get the same values as the $ses$() function?
 
