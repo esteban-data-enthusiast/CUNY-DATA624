@@ -15,6 +15,11 @@ knitr::opts_chunk$set(echo=TRUE, warning=FALSE,
 ```
 
 
+```{r}
+library(fpp2)
+library(forecast)
+```
+
 
 # Week 3: ARIMA Models [13-Jun 19-Jun]
  
@@ -72,14 +77,49 @@ for(i in 2:100)
   y[i] <- 0.6*y[i-1] + e[i]
 ```
 
-
 <br>
-
 
 
 ### Exercise 8.11.6.b
 
 Produce a time plot for the series. How does the plot change as you change $\phi = 1$?  
+
+The produced time plots for multiple series based on different values of phi_1    reveal that
+
+* As the values of phi_1 increase, the amplitude and period of the spikes increase.
+
+
+Plot the data in the time series $y$.
+
+```{r}
+autoplot(y)
+```
+
+```{r}
+
+# define function that generates AR(1) series based on a phi_1 parameter
+generateAR1Series <- function (phi_1) {
+  
+  y <- ts(numeric(100))
+  e <- rnorm(100)
+  for(i in 2:100)
+    y[i] <- phi_1 * y[i-1] + e[i]
+  
+  return(y)
+}
+
+# Produce a time plots for multiple series based on different values of phi_1
+generateAR1Series(0.3) %>%
+  autoplot(series = "0.3") +
+  autolayer(y, series = "0.6") +
+  autolayer(generateAR1Series(0.9), series = "0.9") +
+  guides(color = guide_legend(title = "phi_1")) +
+  ggtitle("Time plots for AR(1) series for diffentent values of phi_1") +
+  theme_bw()
+  
+```
+
+
 
 <br>
 
@@ -87,6 +127,32 @@ Produce a time plot for the series. How does the plot change as you change $\phi
 ### Exercise 8.11.6.c
 
 Write your own code to generate data from an MA(1) model with $\theta_1 = 0.6$ and $\sigma^2 = 1$.
+
+```{r}
+
+# define function that generates MA(1) series based on a theta_1 parameter
+generateMA1Series <- function (theta_1) {
+  
+  y <- ts(numeric(100))
+  e <- rnorm(100)
+  for(i in 2:100)
+    y[i] <- theta_1 * e[i-1] + e[i]
+  
+  return(y)
+}
+
+```
+
+```{r}
+y <- generateMA1Series(theta_1 = 0.6)
+
+autoplot(y, series = "0.6") +
+  geom_line(color = "green") +
+  guides(color = guide_legend(title = "theta_1")) +
+  theme_bw()
+
+```
+
 
 
 <br>
@@ -97,13 +163,47 @@ Write your own code to generate data from an MA(1) model with $\theta_1 = 0.6$ a
 
 Produce a time plot for the series. How does the plot change as you change $\theta_1$?
 
+The produced time plots for multiple series based on different values of theta_1    reveal that
+
+* As the values of theta_1 increase, the amplitude of the spikes increase.
+
+
 <br>
 
+```{r}
 
+# Produce a time plots for multiple series based on different values of theta_1
+generateMA1Series(0.3) %>%
+  autoplot(series = "0.3") +
+  autolayer(y, series = "0.6") +
+  autolayer(generateMA1Series(0.9), series = "0.9") +
+  guides(color = guide_legend(title = "theta_1")) +
+  ggtitle("Time plots for MA(1) series for diffentent values of theta_1") +
+  theme_bw()
+  
+```
+
+
+<br>
 
 ### Exercise 8.11.6.e
 
 Generate data from an ARMA(1,1) model with $\phi_1 = 0.6$, $\theta_1 = 0.6$, and $\sigma^2 = 1$
+
+```{r}
+ARMA_1_1 <- ts(numeric(100))
+
+e <- rnorm(100, sd = 1)
+
+for(i in 2:100)
+  ARMA_1_1[i] <- 0.6 * ARMA_1_1[i-1] + 0.6 * e[i-1] + e[i]
+
+
+autoplot(ARMA_1_1) +
+  geom_line(color = "green") +
+  theme_bw() +
+  ggtitle("Time plot for ARMA(1,1) Generated Data)")
+```
 
 
 <br>
@@ -111,7 +211,26 @@ Generate data from an ARMA(1,1) model with $\phi_1 = 0.6$, $\theta_1 = 0.6$, and
 
 ### Exercise 8.11.6.f
 
-Generate data from an AR(2) model with $\phi_1 = 0.8$, $\phi_2 = 0.3$, and $\sigma^2 = 1$.  (Note that these parameters will give a non-stationary series.)
+Generate data from an AR(2) model with $\phi_1 = -0.8$, $\phi_2 = 0.3$, and $\sigma^2 = 1$. (Note that these parameters will give a non-stationary series.)
+
+<br>
+
+```{r}
+AR2 <- ts(numeric(100))
+
+e <- rnorm(100, sd = 1)
+
+for(i in 3:100)
+  AR2[i] <- -0.8 * AR2[i-1] + 0.3 * AR2[i-2] + e[i]
+
+
+autoplot(AR2) +
+  geom_line(color = "blue") +
+  theme_bw() +
+  ggtitle("Time plot for AR(2) Generated Data)")
+```
+
+
 
 <br>
 
@@ -122,17 +241,21 @@ Graph the latter two series and compare them.
 
 <br>
 
+```{r}
+par(mfrow = c(1,2))
+acf(ARMA_1_1, main ='ARMA(1,1) Generated Data')
+acf(AR2, main ='AR(2) Generated Data')
+```
 
 
 
+<br>
 
 ### Exercise 8.11.8 (aka 8.8)
 
 Consider austa, the total international visitors to Australia (in millions) for the period 1980-2015.
 
 ```{r}
-library(fpp2)
-library(forecast)
 data(austa)
 ```
 
