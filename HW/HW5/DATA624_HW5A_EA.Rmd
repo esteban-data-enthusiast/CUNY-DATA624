@@ -1,0 +1,306 @@
+---
+title: "DATA624 - Homework 5A"
+author: "Esteban Aramayo"
+date: "2022-06-28"
+output: openintro::lab_report
+#output: word_document
+#output: html
+---
+
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE,
+                      message=FALSE,
+                      collapse = FALSE,
+                      comment = "#>" )
+```
+
+
+# Week 5: Nonlinear Regression Models, Regression Trees and Rules-Based Models [27-Jun 3-Jul]
+ 
+
+## Week 5A: Nonlinear Regression Models
+ 
+
+The exercises are from the textbook "Applied Predictive Modeling" by KJ
+
+
+### Exercise 7.2
+
+
+`Friedman (1991)` introduced several benchmark data sets create by simulation. 
+
+One of these simulations used the following nonlinear equation to create data:
+
+$y = 10 sin(\pi x_1 x_) + 20(x_3 − 0.5)^2 + 10x_4 + 5x_5 + N(0, \sigma^2)$
+
+where the x values are random variables uniformly distributed between [0, 1] (there are also 5 other non-informative variables also created in the simulation).
+
+The package `mlbench` contains a function called `mlbench.friedman1` that simulates these data:
+
+```{r}
+library(caret)
+library(mlbench)
+
+set.seed(200)
+trainingData <- mlbench.friedman1(200, sd = 1)
+## We convert the 'x' data from a matrix to a data frame
+## One reason is that this will give the columns names.
+trainingData$x <- data.frame(trainingData$x)
+## Look at the data using
+caret::featurePlot(trainingData$x, trainingData$y)
+## or other methods.
+
+## This creates a list with a vector 'y' and a matrix
+## of predictors 'x'. Also simulate a large test set to
+## estimate the true error rate with good precision:
+testData <- mlbench.friedman1(5000, sd = 1)
+testData$x <- data.frame(testData$x)
+
+
+```
+  
+Tune several models on these data. For example:
+
+```{r}
+
+library(caret)
+knnModel <- train(x = trainingData$x,
+                  y = trainingData$y,
+                  method = "knn",
+                  preProc = c("center", "scale"),
+                  tuneLength = 10)
+
+knnModel
+
+```
+
+
+```{r}
+knnPred <- predict(knnModel, newdata = testData$x)
+## The function 'postResample' can be used to get the test set
+## perforamnce values
+postResample(pred = knnPred, obs = testData$y)
+```
+
+**Which models appear to give the best performance? Does MARS select the informative predictors (those named X1–X5)?**
+
+<br>
+
+#### Using a Neural Network model
+
+First, we remove predictors to ensure that the maximum absolute pairwise correlation between the predictors is less than 0.75.
+
+```{r}
+
+tooHigh <- findCorrelation(cor(trainingData$x), cutoff = .75)
+
+tooHigh
+
+```
+Since the correlation vector is empty, there are no predictors to remove. We can now fit a neural network model using the existing training set.
+
+```{r}
+
+# Resource: Chapter 7.5 of textbook "Applied Predictive Modeling" by KJ
+
+## Create a specific candidate set of models to evaluate:
+nnetGrid <- expand.grid(.decay = c(0, 0.01, .1),
+                        .size = c(1:10),
+                        .bag = FALSE)
+
+# We can use caret to perform a grid search using 10-fold cross-validation.
+# The train function generates a resampling estimate of performance. Because
+# the training set size is not small, 10-fold cross-validation should produce
+# reasonable estimates of model performance. The function trainControl specifies
+# the type of resampling:
+ctrl <- trainControl(method = "cv", number = 10)
+
+nnetTune <- train(trainingData$x, trainingData$y,
+                  method = "avNNet",
+                  tuneGrid = nnetGrid,
+                  trControl = ctrl,
+                  ## Automatically standardize data prior to modeling
+                  ## and prediction
+                  preProc = c("center", "scale"),
+                  linout = TRUE,
+                  trace = FALSE,
+                  MaxNWts = 10 * (ncol(trainingData$x) + 1) + 10 + 1,
+                  maxit = 500)
+
+nnetTune
+```
+
+Predict using the test data set and get the model's performance values
+
+```{r}
+nnetPred <- predict(nnetTune, newdata = testData$x)
+## The function 'postResample' can be used to get the test set
+## performance values
+postResample(pred = nnetPred, obs = testData$y)
+```
+
+<br>
+
+#### Using a Multivariate Adaptive Regression Splines (MARS) model
+
+```{r}
+
+# Resource: Chapter 7.5 of textbook "Applied Predictive Modeling" by KJ
+# Resource: http://uc-r.github.io/mars
+
+library(earth)
+library(dplyr)
+
+## Create a specific candidate set of models to evaluate:
+nnetGrid <- expand.grid(degree = 1:3,
+                        nprune = seq(2, 100, length.out = 10) %>% floor()
+  )
+
+# We can use caret to perform a grid search using 10-fold cross-validation.
+# The train function generates a resampling estimate of performance. Because
+# the training set size is not small, 10-fold cross-validation should produce
+# reasonable estimates of model performance. The function trainControl specifies
+# the type of resampling:
+ctrl <- trainControl(method = "cv", number = 10)
+
+
+# cross validated model
+tuned_mars <- train(
+  x = trainingData$x,
+  y = trainingData$y,
+  method = "earth",
+  metric = "RMSE",
+  trControl = ctrl,
+  tuneGrid = nnetGrid
+)
+
+tuned_mars
+
+```
+
+Plot the MARS model results
+
+```{r}
+ggplot(tuned_mars)
+```
+
+Show the best tuned MARS model
+
+```{r}
+# best chosen MARS model
+tuned_mars$bestTune
+```
+
+Predict using the test data set and get the model's performance values
+
+```{r}
+marsPred <- predict(tuned_mars, newdata = testData$x)
+## The function 'postResample' can be used to get the test set
+## performance values
+postResample(pred = marsPred, obs = testData$y)
+```
+
+<br>
+
+#### Using a Support Vector Machines (SVM) model
+
+```{r}
+
+# Resource: Chapter 7.5 of textbook "Applied Predictive Modeling" by KJ
+
+library(kernlab)
+
+
+# We can use caret to perform a grid search using 10-fold cross-validation.
+# The train function generates a resampling estimate of performance. Because
+# the training set size is not small, 10-fold cross-validation should produce
+# reasonable estimates of model performance. The function trainControl specifies
+# the type of resampling:
+ctrl <- trainControl(method = "cv", number = 10)
+
+
+svmRTuned <- train(trainingData$x, trainingData$y,
+                   method = "svmRadial",
+                   preProc = c("center", "scale"),
+                   tuneLength = 14,
+                   trControl = ctrl)
+
+svmRTuned
+
+```
+
+
+Predict using the test data set and get the model's performance values
+
+```{r}
+svmPred <- predict(svmRTuned, newdata = testData$x)
+## The function 'postResample' can be used to get the test set
+## performance values
+postResample(pred = svmPred, obs = testData$y)
+```
+
+
+
+**Which models appear to give the best performance? Does MARS select the informative predictors (those named X1–X5)?**
+
+Comparing all used models we can see that the MARS model yields the best performance in terms of the lowest RMSE.
+
+
+Model                   |      RMSE  |  Rsquared |       MAE
+------------------------|------------|-----------|----------
+KNN                     |  3.2040595 | 0.6819919 | 2.5683461 
+Neural Network (avNNet) |  2.1930855 | 0.8113903 | 1.6402075
+MARS                    |  1.2803060 | 0.9335241 | 1.0168673
+SVM                     |  2.0793977 | 0.8249453 | 1.5796370 
+
+
+
+<br>
+<br>
+<br>
+
+
+
+
+### Exercise 6.3
+
+A chemical manufacturing process for a pharmaceutical product was discussed in Sect. 1.4. In this problem, the objective is to understand the relationship between biological measurements of the raw materials (predictors), 6.5 Computing 139 measurements of the manufacturing process (predictors), and the response of product yield. Biological predictors cannot be changed but can be used to assess the quality of the raw material before processing. On the other hand, manufacturing process predictors can be changed in the manufacturing process. Improving product yield by 1% will boost revenue by approximately one hundred thousand dollars per batch:
+
+(a) Start R and use these commands to load the data:
+
+> library(AppliedPredictiveModeling)
+> data(chemicalManufacturingProcess)
+
+The matrix `processPredictors` contains the 57 predictors (12 describing the input biological material and 45 describing the process predictors) for the 176 manufacturing runs. `yield` contains the percent yield for each run.
+
+(b) A small percentage of cells in the predictor set contain missing values. Use an imputation function to fill in these missing values (e.g., see Sect. 3.8).
+
+(c) Split the data into a training and a test set, pre-process the data, and tune a model of your choice from this chapter. What is the optimal value of the performance metric?
+
+(d) Predict the response for the test set. What is the value of the performance metric and how does this compare with the resampled performance metric on the training set?
+
+(e) Which predictors are most important in the model you have trained? Do either the biological or process predictors dominate the list?
+
+(f) Explore the relationships between each of the top predictors and the response. How could this information be helpful in improving yield in future runs of the manufacturing process?
+
+
+<br>
+<br>
+<br>
+
+
+
+
+### Exercise 7.5
+
+
+Exercise 6.3 describes data for a chemical manufacturing process. Use the same data imputation, data splitting, and pre-processing steps as before and train several nonlinear regression models.
+
+(a) Which nonlinear regression model gives the optimal resampling and test set performance?
+
+(b) Which predictors are most important in the optimal nonlinear regression model? Do either the biological or process variables dominate the list? How do the top ten important predictors compare to the top ten predictors from the optimal linear model?
+
+(c) Explore the relationships between the top predictors and the response for the predictors that are unique to the optimal nonlinear regression model.
+Do these plots reveal intuition about the biological or process predictors and their relationship with yield?
+
+

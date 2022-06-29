@@ -60,12 +60,27 @@ Week 5: Nonlinear Regression Models, Regression Trees and Rules-Based Models [27
 Week 5A: Nonlinear Regression Models
 
 - Read KJ #7
+	- 7.1 Neural Networks
+	- 7.2 Multivariate Adaptive Regression Splines (MARS) (*)
+	- 7.3 Support Vector Machines
+	- 7.4 K-nearest Neighbors
+	- 7.5 Computing
+
 - HW 7.2 and 7.5
 - Discussion
 
 Week 5B: Regression Trees and Rules-Based Models
 
 - Read KJ #8 
+	- 8.1 Basic Regression Trees  (*)
+	- 8.2 Regression Model Trees  (*)
+	- 8.3 Rule-Based Models       (*)
+	- 8.4 Bagged Trees
+	- 8.5 Random Forests
+	- 8.6 Boosting
+	- 8.7 Cubist
+	- 8.8 Computing
+
 - HW# 8.1, 8.2, 8.3, 8.7
 
 -----------------------------------------------------------
@@ -75,6 +90,11 @@ Week 6: Recommender Systems and Case Study [5-Jul 10-Jul]
 Week 6: Case Study - Strength of Concrete
 
 - Read: KJ # 10
+	- 10.1 Model Building Strategy
+	- 10.2 Model Performance
+	- 10.3 Optimizing Compressive Strength
+	- 10.4 Computing
+
 - Finish Chapter 8 problems
 
 Week 6B: Recommender Systems

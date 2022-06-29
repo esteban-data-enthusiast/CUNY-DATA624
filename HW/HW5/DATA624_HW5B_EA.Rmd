@@ -1,0 +1,28 @@
+---
+title: "DATA624 - Homework 5B"
+author: "Esteban Aramayo"
+date: "2022-06-28"
+output: openintro::lab_report
+#output: word_document
+#output: html
+---
+
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE,
+                      message=FALSE,
+                      collapse = FALSE,
+                      comment = "#>" )
+```
+
+
+# Week 5: Nonlinear Regression Models, Regression Trees and Rules-Based Models [27-Jun 3-Jul]
+ 
+
+## Week 5B: Regression Trees and Rules-Based Models
+ 
+ 
+Read KJ #8 
+HW# 8.1, 8.2, 8.3, 8.7
+
+
+
